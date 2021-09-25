@@ -4,12 +4,21 @@
 
 function ifObj(x, d) { return ((x && typeof x) === 'object' ? x : d); }
 
-function toStrTCP() { return 'TCP ' + this.host + ':' + (this.port || '*'); }
+function portOrAst(c, b, a) { return b + c.host + a + (c.port || '*'); }
+function toStrTCP() { return portOrAst(this, 'TCP ', ':'); }
+function toStrTCP6() { return portOrAst(this, 'TCP6 [', ']:'); }
 function toStrUDS() { return 'unix domain socket ' + this.path; }
 function toStrFD() { return 'file descriptor #' + this.fd; }
 
 function tcpAddr(addr, port) {
-  return { host: (addr || 'localhost'), port: port, toString: toStrTCP };
+  var spec = { host: (addr || 'localhost'), port: port, toString: toStrTCP };
+  if (addr) {
+    if ((addr.slice(0, 1) === '[') && (addr.slice(-1) === ']')) {
+      spec.host = addr.slice(1, -1);
+      spec.toString = toStrTCP6;
+    }
+  }
+  return spec;
 }
 
 function fdAddr(a, p) {
@@ -28,20 +37,28 @@ function systemdAddr(o) {
 }
 
 
+function protoAddr(proto, addr, port) {
+  if (proto === 'unix') { return udsAddr(addr); }
+  if (proto === 'envfd') { return envFdAddr(addr); }
+  if (proto === 'fd') { return fdAddr(addr, port); }
+  if (proto === 'systemd') { return systemdAddr(addr); }
+  throw new Error('Not implemented: socket type ' + proto);
+}
+
+
 function core(addr, port) {
-  var how = addr.substr(0, 1);
-  if (how === '/') { return udsAddr(addr); }
-  if (how === '&') { return fdAddr(addr.slice(1), port); }
-  if (how === '$') { return envFdAddr(addr.slice(1)); }
-  how = /^(\w{1,8}):/.exec(addr);
-  if (!how) { return tcpAddr(addr, port); }
-  addr = addr.slice(how[0].length);
-  how = how[1];
-  if (how === 'unix') { return udsAddr(addr); }
-  if (how === 'envfd') { return envFdAddr(addr); }
-  if (how === 'fd') { return fdAddr(addr, port); }
-  if (how === 'systemd') { return systemdAddr(addr); }
-  throw new Error('Not implemented: socket type ' + how);
+  var m = addr.slice(0, 1);
+  if (m === '/') { return udsAddr(addr); }
+  if (m === '&') { return fdAddr(addr.slice(1), port); }
+  if (m === '$') { return envFdAddr(addr.slice(1)); }
+  m = /^(\w{1,8}):/.exec(addr);
+  if (m) {
+    m = m[1];
+    return protoAddr(m, addr.slice(m.length + 1), port);
+  }
+  m = /:(\d+)$/.exec(addr);
+  if (m) { return tcpAddr(addr.slice(0, m.index), +m[1]); }
+  return tcpAddr(addr, port);
 }
 
 

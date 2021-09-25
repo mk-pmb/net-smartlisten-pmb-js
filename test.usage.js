@@ -13,7 +13,7 @@ function equal(ac, ex) {
   // #BEGIN# usage demo
   var smartListen = require('net-smartlisten-pmb');
 
-  //=== TCP PORTS ===//
+  //=== TCP ports ===//
   equal(smartListen(),
     { host: 'localhost', port: 0,
       toString: asFuncResult('TCP localhost:*') });
@@ -26,6 +26,16 @@ function equal(ac, ex) {
   equal(smartListen('192.168.0.23', 42),
     { host: '192.168.0.23', port: 42,
       toString: asFuncResult('TCP 192.168.0.23:42') });
+
+  equal(smartListen('example.net:42'),
+    { host: 'example.net', port: 42,
+      toString: asFuncResult('TCP example.net:42') });
+  equal(smartListen('192.168.0.23:42'),
+    { host: '192.168.0.23', port: 42,
+      toString: asFuncResult('TCP 192.168.0.23:42') });
+  equal(smartListen('[2001:db8::23]:42'),
+    { host: '2001:db8::23', port: 42,
+      toString: asFuncResult('TCP6 [2001:db8::23]:42') });
 
   //=== Domain sockets ===//
   // NB: For OS-specific naming restrictions, see the API manual.
