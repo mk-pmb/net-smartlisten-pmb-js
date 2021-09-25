@@ -47,6 +47,8 @@ function protoAddr(proto, addr, port) {
 
 
 function core(addr, port) {
+  addr = String(addr || '');
+  port = (+port || 0);
   var m = addr.slice(0, 1);
   if (m === '/') { return udsAddr(addr); }
   if (m === '&') { return fdAddr(addr.slice(1), port); }
@@ -56,15 +58,17 @@ function core(addr, port) {
     m = m[1];
     return protoAddr(m, addr.slice(m.length + 1), port);
   }
-  m = /:(\d+)$/.exec(addr);
-  if (m) { return tcpAddr(addr.slice(0, m.index), +m[1]); }
+  if (!port) {
+    m = /(?:^|:)(\d+)$/.exec(addr);
+    if (m) { return tcpAddr(addr.slice(0, m.index), +m[1]); }
+  }
   return tcpAddr(addr, port);
 }
 
 
 function smartListen(addr, port, dict) {
   if (!ifObj(addr)) { addr = { addr: addr, port: port }; }
-  dict = Object.assign({}, dict, core(addr.addr || '', (+addr.port || 0)));
+  dict = Object.assign({}, dict, core(addr.addr, addr.port));
   if (addr.server) { addr.server.listen(dict); }
   return dict;
 }

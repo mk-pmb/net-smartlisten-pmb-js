@@ -16,7 +16,7 @@ from [test.usage.js](test.usage.js):
 
 <!--#include file="test.usage.js" outdent="  " code="javascript"
   start="  // #BEGIN# usage demo" stop="  // #ENDOF# usage demo" -->
-<!--#verbatim lncnt="57" -->
+<!--#verbatim lncnt="69" -->
 ```javascript
 var smartListen = require('net-smartlisten-pmb');
 
@@ -30,9 +30,21 @@ equal(smartListen('192.168.0.23'),
 equal(smartListen(undefined, 23),
   { host: 'localhost', port: 23,
     toString: asFuncResult('TCP localhost:23') });
+equal(smartListen(undefined, 23),
+  { host: 'localhost', port: 23,
+    toString: asFuncResult('TCP localhost:23') });
 equal(smartListen('192.168.0.23', 42),
   { host: '192.168.0.23', port: 42,
     toString: asFuncResult('TCP 192.168.0.23:42') });
+equal(smartListen(':23'),
+  { host: 'localhost', port: 23,
+    toString: asFuncResult('TCP localhost:23') });
+equal(smartListen('23'),
+  { host: 'localhost', port: 23,
+    toString: asFuncResult('TCP localhost:23') });
+equal(smartListen(23),
+  { host: 'localhost', port: 23,
+    toString: asFuncResult('TCP localhost:23') });
 
 equal(smartListen('example.net:42'),
   { host: 'example.net', port: 42,
