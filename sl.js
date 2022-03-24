@@ -4,9 +4,14 @@
 
 function ifObj(x, d) { return ((x && typeof x) === 'object' ? x : d); }
 
-function portOrAst(c, b, a) { return b + c.host + a + (c.port || '*'); }
-function toStrTCP() { return portOrAst(this, 'TCP ', ':'); }
-function toStrTCP6() { return portOrAst(this, 'TCP6 [', ']:'); }
+function portOrAst(addr, beforeProto, beforeHost, portSep) {
+  return (beforeProto + (addr.urlProto || '')
+    + beforeHost + addr.host
+    + portSep + (addr.port || '*'));
+}
+
+function toStrTCP() { return portOrAst(this, 'TCP ', '', ':'); }
+function toStrTCP6() { return portOrAst(this, 'TCP6 ', '[', ']:'); }
 function toStrUDS() { return 'unix domain socket ' + this.path; }
 function toStrFD() { return 'file descriptor #' + this.fd; }
 
@@ -47,8 +52,6 @@ function protoAddr(proto, addr, port) {
 
 
 function core(addr, port) {
-  addr = String(addr || '');
-  port = (+port || 0);
   var m = addr.slice(0, 1);
   if (m === '/') { return udsAddr(addr); }
   if (m === '&') { return fdAddr(addr.slice(1), port); }
@@ -66,9 +69,18 @@ function core(addr, port) {
 }
 
 
+function protoCore(a) {
+  var u = a.urlProto;
+  a = core(String(a.addr || ''), (+a.port || 0));
+  if (u) { a.urlProto = u; }
+  return a;
+}
+
+
 function smartListen(addr, port, dict) {
+  if (typeof dict === 'string') { dict = { urlProto: dict }; }
   if (!ifObj(addr)) { addr = { addr: addr, port: port }; }
-  dict = Object.assign({}, dict, core(addr.addr, addr.port));
+  dict = Object.assign({}, dict, protoCore(addr || false));
   if (addr.server) { addr.server.listen(dict); }
   return dict;
 }

@@ -2,16 +2,15 @@
 /* -*- tab-width: 2 -*- */
 'use strict';
 
-var assert = require('assert'), asFuncResult = String;
+var smartListen = require('net-smartlisten-pmb'),
+  assert = require('assert'), asFuncResult = String;
 
 function equal(ac, ex) {
   ac.toString = ac.toString();
   assert.deepStrictEqual(ac, ex);
 }
 
-(function readmeDemo() {
-  // #BEGIN# usage demo
-  var smartListen = require('net-smartlisten-pmb');
+(function commonUsage() {
 
   //=== TCP ports ===//
   equal(smartListen(),
@@ -49,6 +48,17 @@ function equal(ac, ex) {
     { host: '2001:db8::23', port: 42,
       toString: asFuncResult('TCP6 [2001:db8::23]:42') });
 
+  //=== Option urlProto ===//
+  equal(smartListen({ addr: 'example.net:42', urlProto: 'telnet://' }),
+    { host: 'example.net', port: 42, urlProto: 'telnet://',
+      toString: asFuncResult('TCP telnet://example.net:42') });
+  equal(smartListen('example.net:42', 0, 'telnet://'),
+    { host: 'example.net', port: 42, urlProto: 'telnet://',
+      toString: asFuncResult('TCP telnet://example.net:42') });
+  equal(smartListen('[2001:db8::23]:42', 0, 'telnet://'),
+    { host: '2001:db8::23', port: 42, urlProto: 'telnet://',
+      toString: asFuncResult('TCP6 telnet://[2001:db8::23]:42') });
+
   //=== Domain sockets ===//
   // NB: For OS-specific naming restrictions, see the API manual.
   equal(smartListen('/var/run/demo.sock'),
@@ -78,9 +88,12 @@ function equal(ac, ex) {
     toString: asFuncResult('file descriptor #5') });
   equal(smartListen('systemd:2'), { fd: 7, sdPid: 333,
     toString: asFuncResult('file descriptor #7') });
-  // #ENDOF# usage demo
+}());
 
-  // #BEGIN# pathological
+
+(function pathologicalExamples() {
+  var smartListen = require('net-smartlisten-pmb');
+
   equal(smartListen('127..', -42), { host: '127..', port: -42,
       toString: asFuncResult('TCP 127..:-42') });
 
@@ -89,7 +102,6 @@ function equal(ac, ex) {
 
   equal(smartListen('#$&=§?'), { host: '#$&=§?', port: 0,
       toString: asFuncResult('TCP #$&=§?:*') });
-  // #ENDOF# pathological
 }());
 
 
